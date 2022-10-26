@@ -100,12 +100,13 @@ public:
                          [](const auto& tuple) { return std::get<0>(tuple) == "name"; });
         if (nameIt == envObj.end())
         {
-            throw std::runtime_error("Environment has no name");
+            throw std::runtime_error("Engine environment: Environment name is missing.");
         }
         auto nameOpt = std::get<1>(*nameIt).getString();
         if (!nameOpt)
         {
-            throw std::runtime_error("Environment name is not a string");
+            throw std::runtime_error(
+                "Engine environment: Environment name is not a string.");
         }
         m_name = nameOpt.value();
 
@@ -132,7 +133,8 @@ public:
                                if (std::holds_alternative<base::Error>(assetJson))
                                {
                                    throw std::runtime_error(fmt::format(
-                                       "[Environment] Cannot retreive filter [{}]: {}",
+                                       "Engine environment: Filter \"{}\" could not be "
+                                       "obtained: {}.",
                                        assetName,
                                        std::get<base::Error>(assetJson).message));
                                }
@@ -145,12 +147,12 @@ public:
         }
 
         // Build graphs
-        // We need atleast one graph to build the environment.
+        // We need at least one graph to build the environment.
         if (envObj.empty())
         {
             throw std::runtime_error(
-                fmt::format("[Environment(json, catalog)] environment [{}] needs "
-                            "atleast one graph",
+                fmt::format("Engine environment: environment \"{}\" needs at least one "
+                            "asset (decoder, rule or output) to build a graph.",
                             m_name));
         }
         for (auto& [name, json] : envObj)
@@ -176,10 +178,10 @@ public:
                     auto assetJson = storeRead->get(base::Name {assetName});
                     if (std::holds_alternative<base::Error>(assetJson))
                     {
-                        throw std::runtime_error(
-                            fmt::format("[Environment] Cannot retreive asset [{}]: {}",
-                                        assetName,
-                                        std::get<base::Error>(assetJson).message));
+                        throw std::runtime_error(fmt::format(
+                            "Engine environment: Asset \"{}\" cannot be obtained: {}.",
+                            assetName,
+                            std::get<base::Error>(assetJson).message));
                     }
                     return std::make_pair(assetName, std::get<json::Json>(assetJson));
                 });
@@ -204,19 +206,20 @@ public:
                     {
                         childrenNames += child + " ";
                     }
-                    throw std::runtime_error(
-                        fmt::format("Error building [{}] graph: parent [{}] not found, "
-                                    "for children [{}]",
-                                    name,
-                                    parent,
-                                    childrenNames));
+                    throw std::runtime_error(fmt::format(
+                        "Engine environment: Error building environment \"{}\". Asset "
+                        "\"{}\" requested for parent \"{}\" which could not be found.",
+                        name,
+                        parent,
+                        childrenNames));
                 }
                 for (auto& child : children)
                 {
                     if (!std::get<1>(*graphPos).hasNode(child))
                     {
-                        throw std::runtime_error(
-                            fmt::format("Missing child asset: {}", child));
+                        throw std::runtime_error(fmt::format(
+                            "Engine environment: Asset \"{}\" could not be found.",
+                            child));
                     }
                 }
             }

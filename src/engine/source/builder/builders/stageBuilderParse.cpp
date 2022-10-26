@@ -6,8 +6,8 @@
 #include <string>
 
 #include "expression.hpp"
-#include <json/json.hpp>
 #include "registry.hpp"
+#include <json/json.hpp>
 
 namespace builder::internals::builders
 {
@@ -21,14 +21,15 @@ base::Expression stageBuilderParse(const std::any& definition)
     }
     catch (const std::exception& e)
     {
-        throw std::runtime_error(
-            "[builder::stageBuilderParse(json)] Received unexpected argument type");
+        throw std::runtime_error(fmt::format(
+            "Engine parse builder: Definition could not be converted to json: {}",
+            e.what()));
     }
     if (!jsonDefinition.isObject())
     {
         throw std::runtime_error(
-            fmt::format("[builder::stageBuilderParse(json)] Invalid json definition "
-                        "type: expected [object] but got [{}]",
+            fmt::format("Engine parse builder: Invalid json definition type: expected "
+                        "object but got {}.",
                         jsonDefinition.typeName()));
     }
 
@@ -50,11 +51,10 @@ base::Expression stageBuilderParse(const std::any& definition)
                        }
                        catch (const std::exception& e)
                        {
-                           std::throw_with_nested(std::runtime_error(
-                               fmt::format("[builder::stageBuilderParse(json)] "
-                                           "Error building parser [{}]: {}",
-                                           parserName,
-                                           e.what())));
+                           std::throw_with_nested(std::runtime_error(fmt::format(
+                               "Engine parse builder: Error building parser \"{}\": {}",
+                               parserName,
+                               e.what())));
                        }
 
                        return parserExpression;

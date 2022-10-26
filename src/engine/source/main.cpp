@@ -86,7 +86,7 @@ constexpr auto ENGINE_ENVIRONMENT = "environment/wazuh/0";
 void configureSubcommandRun(std::shared_ptr<CLI::App> app)
 {
     CLI::App* run =
-        app->add_subcommand(args::SUBCOMMAND_RUN, "Starts an engine instance");
+        app->add_subcommand(args::SUBCOMMAND_RUN, "Starts a Wazuh engine instance.");
 
     // Endpoints
     run->add_option(
@@ -99,35 +99,35 @@ void configureSubcommandRun(std::shared_ptr<CLI::App> app)
     // Threads
     run->add_option("-t, --threads",
                     args::threads,
-                    "Number of dedicated threads for the environment.")
+                    "The number of threads to be used by the engine environment.")
         ->default_val(1);
 
     // File storage
     run->add_option("-f, --file_storage",
                     args::file_storage,
-                    "Path to folder where assets are located.")
+                    "Path to the folder where the assets are located (store).")
         ->default_val(ENGINE_STORE_PATH)
         ->check(CLI::ExistingDirectory);
 
     // Queue size
     run->add_option("-q, --queue_size",
                     args::queue_size,
-                    "Number of events that can be queued for processing.")
+                    "Number of events that can be queued to be processed.")
         ->default_val(1000000);
 
     // KVDB path
-    run->add_option("-k, --kvdb_path", args::kvdb_path, "Path to KVDB folder.")
+    run->add_option("-k, --kvdb_path", args::kvdb_path, "Path to the KVDB folder.")
         ->default_val(ENGINE_KVDB_PATH)
         ->check(CLI::ExistingDirectory);
 
     // Environment
-    run->add_option("--environment", args::environment, "Environment name.")
+    run->add_option("--environment", args::environment, "Environment's name.")
         ->default_val(ENGINE_ENVIRONMENT);
 
     // Log level
     run->add_option("-l, --log_level",
                     args::log_level,
-                    "Log level: 0 = Debug, 1 = Info, 2 = Warning, 3 = Error")
+                    "Engine log level: 0 = Debug, 1 = Info, 2 = Warning, 3 = Error")
         ->default_val(3)
         ->check(CLI::Range(0, 3));
 }
@@ -137,7 +137,7 @@ void configureSubcommandLogtest(std::shared_ptr<CLI::App> app)
     CLI::App* logtest =
         app->add_subcommand(args::SUBCOMMAND_LOGTEST, "Utility to test the ruleset");
     // KVDB path
-    logtest->add_option("-k, --kvdb_path", args::kvdb_path, "Path to KVDB folder.")
+    logtest->add_option("-k, --kvdb_path", args::kvdb_path, "Path to the KVDB folder.")
         ->default_val(ENGINE_KVDB_PATH)
         ->check(CLI::ExistingDirectory);
 
@@ -145,19 +145,19 @@ void configureSubcommandLogtest(std::shared_ptr<CLI::App> app)
     logtest
         ->add_option("-f, --file_storage",
                      args::file_storage,
-                     "Path to folder where assets are located.")
+                     "Path to the folder where the assets are located (store).")
         ->default_val(ENGINE_STORE_PATH)
         ->check(CLI::ExistingDirectory);
 
     // Environment
-    logtest->add_option("--environment", args::environment, "Environment name.")
+    logtest->add_option("--environment", args::environment, "Environment's name.")
         ->default_val(ENGINE_ENVIRONMENT);
 
     // Protocol queue
     logtest
         ->add_option("-q, --protocol_queue",
                      args::protocol_queue,
-                     "Protocol queue number of the event.")
+                     "Protocol queue identifier of the event (a single character).")
         ->default_val(1);
 
     // Protocol location
@@ -178,7 +178,7 @@ void configureSubcommandLogtest(std::shared_ptr<CLI::App> app)
         logtest->add_flag("-d, --debug",
                           args::debug_level,
                           "Enable debug mode [0-2]. Flag can appear multiple times. "
-                          "No flag[0]: No debug, d[1]: Asset history, dd[2]: 1 + "
+                          "No flag[0]: No debug, d[1]: Assets history, dd[2]: 1 + "
                           "Full tracing.");
 
     // Trace
@@ -197,7 +197,7 @@ void configureSubcommandGraph(std::shared_ptr<CLI::App> app)
         args::SUBCOMMAND_GRAPH, "Generates a dot description of an environment");
 
     // KVDB path
-    graph->add_option("-k, --kvdb_path", args::kvdb_path, "Path to KVDB folder.")
+    graph->add_option("-k, --kvdb_path", args::kvdb_path, "Path to the KVDB folder.")
         ->default_val(ENGINE_KVDB_PATH)
         ->check(CLI::ExistingDirectory);
 
@@ -205,38 +205,39 @@ void configureSubcommandGraph(std::shared_ptr<CLI::App> app)
     graph
         ->add_option("-f, --file_storage",
                      args::file_storage,
-                     "Path to folder where assets are located.")
+                     "Path to the folder where the assets are located (store).")
         ->default_val(ENGINE_STORE_PATH)
         ->check(CLI::ExistingDirectory);
 
     // Environment
-    graph->add_option("--environment", args::environment, "Environment name.")
+    graph->add_option("--environment", args::environment, "Environment's name.")
         ->default_val(ENGINE_ENVIRONMENT);
 
     // Graph dir
     graph
         ->add_option(
-            "-o, --output_dir", args::graph_out_dir, "Directory to save graph files")
+            "-o, --output_dir", args::graph_out_dir, "Directory to save the graph files.")
         ->default_str(args::ENV_DEF_DIR);
 }
 
 void configureSubcommandKvdb(std::shared_ptr<CLI::App> app)
 {
     CLI::App* kvdb =
-        app->add_subcommand(args::SUBCOMMAND_KVDB, "Operates the key-value databases");
+        app->add_subcommand(args::SUBCOMMAND_KVDB, "Manages the key-value databases.");
 
     // KVDB path
-    kvdb->add_option("-p, --path", args::kvdb_path, "Path to KVDB folder.")
+    kvdb->add_option("-p, --path", args::kvdb_path, "Path to the KVDB folder.")
         ->default_val(ENGINE_KVDB_PATH)
         ->check(CLI::ExistingDirectory);
 
     // KVDB name
-    kvdb->add_option("-n, --name", args::kvdb_name, "KVDB name to be added.")->required();
+    kvdb->add_option("-n, --name", args::kvdb_name, "Name of the KVDB to be added.")
+        ->required();
 
     // KVDB input file
     kvdb->add_option("-i, --input_file",
                      args::kvdb_input_file,
-                     "Path to file containing the KVDB data.")
+                     "Path to the file that contains the KVDB data.")
         ->required()
         ->check(CLI::ExistingFile);
 
@@ -251,25 +252,26 @@ void configureSubcommandKvdb(std::shared_ptr<CLI::App> app)
 void configureSubCommandCatalog(std::shared_ptr<CLI::App> app)
 {
     CLI::App* catalog =
-        app->add_subcommand(args::SUBCOMMAND_CATALOG, "Operates the engine catalog");
+        app->add_subcommand(args::SUBCOMMAND_CATALOG, "Manages the engine catalog.");
     catalog->require_subcommand();
 
     // Endpoint
-    catalog->add_option("-a, --api_socket", args::apiEndpoint, "engine api address")
+    catalog
+        ->add_option("-a, --api_socket", args::apiEndpoint, "API server socket address.")
         ->default_val(ENGINE_API_SOCK);
 
     // format
     catalog->add_flag(
-        "-j, --json", args::catalogJsonFormat, "Use Input/Output json format");
+        "-j, --json", args::catalogJsonFormat, "Use json as Input/Output format.");
     catalog
         ->add_flag("-y, --yaml",
                    args::catalogYmlFormat,
-                   "[Used by default] Use Input/Output yaml format")
+                   "[Used by default] Use yaml as Input/Output format.")
         ->excludes(catalog->get_option("--json"));
 
     // Shared obpitons among subcommands
     auto name = "name";
-    std::string nameDesc = "Name identifying the ";
+    std::string nameDesc = "Name that identifies the ";
     auto item = "item";
     std::string itemDesc = "Content of the item, can be passed as argument or redirected "
                            "from a file using | operator or the < operator";
@@ -277,7 +279,7 @@ void configureSubCommandCatalog(std::shared_ptr<CLI::App> app)
     // Catalog subcommands
     auto list_subcommand = catalog->add_subcommand(
         args::SUBCOMMAND_CATALOG_LIST,
-        "list item-type[/item-id]: List all items of the collection.");
+        "list item-type[/item-id]: List all the items from the collection.");
     list_subcommand
         ->add_option(
             name, args::catalogName, nameDesc + "collection to list: item-type[/item-id]")
@@ -302,16 +304,16 @@ void configureSubCommandCatalog(std::shared_ptr<CLI::App> app)
 
     auto create_subcommand = catalog->add_subcommand(
         args::SUBCOMMAND_CATALOG_CREATE,
-        "create item-type << item_file: Create and add item to collection.");
+        "create item-type << item_file: Create and add an item to the collection.");
     create_subcommand
         ->add_option(
-            name, args::catalogName, nameDesc + "collection to add item: item-type")
+            name, args::catalogName, nameDesc + "collection to add an item to: item-type")
         ->required();
     create_subcommand->add_option(item, args::catalogContent, itemDesc)->default_val("");
 
     auto delete_subcommand = catalog->add_subcommand(
         args::SUBCOMMAND_CATALOG_DELETE,
-        "delete item-type[/item-id[/version]]: Delete an item or collection.");
+        "delete item-type[/item-id[/version]]: Delete an item or a collection.");
     delete_subcommand
         ->add_option(name,
                      args::catalogName,
@@ -332,8 +334,8 @@ void configureSubCommandCatalog(std::shared_ptr<CLI::App> app)
 
     auto load_subcommand =
         catalog->add_subcommand(args::SUBCOMMAND_CATALOG_LOAD,
-                                "load item-type path: Tries to create and add all items "
-                                "found in the path to the collection.");
+                                "load item-type path: Tries to create and add all the "
+                                "items found in the path to the collection.");
     load_subcommand
         ->add_option(
             name, args::catalogName, nameDesc + "collection to add items: item-type")
@@ -348,11 +350,12 @@ void configureSubCommandCatalog(std::shared_ptr<CLI::App> app)
 void configureSubCommandEnvironment(std::shared_ptr<CLI::App> app)
 {
     CLI::App* environment = app->add_subcommand(args::SUBCOMMAND_ENVIRONMENT,
-                                                "Operates the running environments");
+                                                "Manages the running environments");
     environment->require_subcommand();
 
     // Endpoint
-    environment->add_option("-a, --api_socket", args::apiEndpoint, "engine api address")
+    environment
+        ->add_option("-a, --api_socket", args::apiEndpoint, "API server socket address.")
         ->default_val(ENGINE_API_SOCK);
 
     // Subcommands
@@ -363,7 +366,8 @@ void configureSubCommandEnvironment(std::shared_ptr<CLI::App> app)
     // Action: set
     auto set_subcommand = environment->add_subcommand(
         args::SUBCOMMAND_ENVIRONMENT_SET, "set [environment]: Set active environments.");
-    set_subcommand->add_option("environment", args::environmentTarget, "Environment name")
+    set_subcommand
+        ->add_option("environment", args::environmentTarget, "Environment's name.")
         ->required();
 
     // Action: delete
@@ -371,7 +375,7 @@ void configureSubCommandEnvironment(std::shared_ptr<CLI::App> app)
         environment->add_subcommand(args::SUBCOMMAND_ENVIRONMENT_DELETE,
                                     "delete [environment]: Delete an environment.");
     delete_subcommand
-        ->add_option("environment", args::environmentTarget, "Environment name")
+        ->add_option("environment", args::environmentTarget, "Environment's name.")
         ->required();
 }
 
@@ -383,7 +387,7 @@ std::shared_ptr<CLI::App> configureCliApp()
         "allows the management of all the engine components.\n");
 
     app->add_flag(
-        "-v, --version", args::engineVersion, "Prints version information and exits");
+        "-v, --version", args::engineVersion, "Prints the engine version and exits.");
 
     // Add subcommands
     configureSubcommandRun(app);

@@ -5,8 +5,8 @@
 
 #include "baseTypes.hpp"
 #include "expression.hpp"
-#include <json/json.hpp>
 #include "registry.hpp"
+#include <json/json.hpp>
 
 namespace builder::internals::builders
 {
@@ -21,40 +21,43 @@ base::Expression stageMapBuilder(std::any definition)
     }
     catch (std::exception& e)
     {
-        throw std::runtime_error(
-            "[builders::stageMapBuilder(json)] Received unexpected argument type");
+        throw std::runtime_error(fmt::format(
+            "Engine map stage builder: Definition could not be converted to json: {}",
+            e.what()));
     }
 
     if (!jsonDefinition.isArray())
     {
         throw std::runtime_error(
-            fmt::format("[builders::stageMapBuilder(json)] Invalid json definition "
-                        "type: expected [array] but got [{}]",
+            fmt::format("Engine map stage builder: Invalid json definition type: "
+                        "expected \"array\" but got \"{}\".",
                         jsonDefinition.typeName()));
     }
 
     auto mappings = jsonDefinition.getArray().value();
     std::vector<base::Expression> mappingExpressions;
-    std::transform(mappings.begin(),
+    std::transform(
+        mappings.begin(),
         mappings.end(),
         std::back_inserter(mappingExpressions),
         [](auto arrayMember)
         {
-            if(!arrayMember.isObject())
+            if (!arrayMember.isObject())
             {
                 throw std::runtime_error(
-                    fmt::format("[builders::stageMapBuilder(json)] "
-                                "Invalid array item type: expected [object] but got [{}]",
+                    fmt::format("Engine map stage builder: Invalid array item type, "
+                                "expected \"object\" but got \"{}\"",
                                 arrayMember.typeName()));
             }
-            if(arrayMember.size() != 1)
+            if (arrayMember.size() != 1)
             {
-                throw std::runtime_error(fmt::format(
-                    "[builders::stageMapBuilder(json)] "
-                    "Invalid array item object size: expected [1] but got [{}]",
-                    arrayMember.size()));
+                throw std::runtime_error(
+                    fmt::format("Engine map stage builder: Invalid object item size, "
+                                "expected exactly one key/value pair but got \"{}\".",
+                                arrayMember.size()));
             }
-            return Registry::getBuilder("operation.map")(arrayMember.getObject().value()[0]);
+            return Registry::getBuilder("operation.map")(
+                arrayMember.getObject().value()[0]);
         });
 
     auto expression = base::Chain::create("stage.map", mappingExpressions);

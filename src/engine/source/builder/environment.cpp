@@ -24,7 +24,9 @@ Asset::Type getAssetType(const std::string& name)
     }
     else
     {
-        throw std::runtime_error(fmt::format("Unknown asset type: {}", name));
+        // TODO: should this be a logic_error?
+        throw std::runtime_error(
+            fmt::format("Engine environment: Unknown type of asset \"{}\".", name));
     }
 }
 
@@ -33,10 +35,11 @@ void Environment::buildGraph(
     const std::string& graphName,
     Asset::Type type)
 {
-    auto graphPos = std::find_if(m_graphs.begin(),
-                                 m_graphs.end(),
-                                 [&graphName](const auto& graph)
-                                 { return std::get<0>(graph) == graphName; });
+    auto graphPos =
+        std::find_if(m_graphs.begin(), m_graphs.end(), [&graphName](const auto& graph)
+            {
+                return std::get<0>(graph) == graphName;
+            });
     auto& graph = std::get<1>(*graphPos);
     for (auto& [name, json] : assetsDefinitons)
     {
@@ -48,8 +51,8 @@ void Environment::buildGraph(
         }
         catch (const std::exception& e)
         {
-            std::throw_with_nested(
-                std::runtime_error(fmt::format("Failed to build asset: {}", name)));
+            std::throw_with_nested(std::runtime_error(fmt::format(
+                "Engine environment: Building asset \"{}\" failed: {}", name, e.what())));
         }
         m_assets.insert(std::make_pair(name, asset));
         graph.addNode(name, asset);
@@ -69,10 +72,11 @@ void Environment::buildGraph(
 
 void Environment::addFilters(const std::string& graphName)
 {
-    auto graphPos = std::find_if(m_graphs.begin(),
-                                 m_graphs.end(),
-                                 [&graphName](const auto& graph)
-                                 { return std::get<0>(graph) == graphName; });
+    auto graphPos =
+        std::find_if(m_graphs.begin(), m_graphs.end(), [&graphName](const auto& graph)
+            {
+                return std::get<0>(graph) == graphName;
+            });
     auto& graph = std::get<1>(*graphPos);
     for (auto& [name, asset] : m_assets)
     {
@@ -119,8 +123,7 @@ std::string Environment::getGraphivzStr()
        << std::endl;
     ss << "environment [label=\"" << m_name << "\", shape=Mdiamond];" << std::endl;
 
-    auto removeHyphen = [](const std::string& text)
-    {
+    auto removeHyphen = [](const std::string& text) {
         auto ret = text;
         auto pos = ret.find("-");
         while (pos != std::string::npos)
@@ -189,8 +192,11 @@ base::Expression Environment::getExpression() const
                     base::Broadcast::create(graph.node(graph.rootId())->m_name, {});
                 break;
             default:
-                throw std::runtime_error("Unsupported root asset type in "
-                                         "Environment::getExpression");
+                throw std::runtime_error(
+                    fmt::format("Engine environment: Building environment \"{}\" failed "
+                                "as the type of the asset \"{}\" is not supported.",
+                                graphName,
+                                graph.node(graph.rootId())->m_name));
         }
         // Add input Expression to environment expression
         environment->getOperands().push_back(inputExpression);
@@ -245,8 +251,8 @@ base::Expression Environment::getExpression() const
 
                         default:
                             throw std::runtime_error(
-                                fmt::format("Unsupported asset type in "
-                                            "Environment::getExpression for asset [{}]",
+                                fmt::format("Engine environment: Asset type not "
+                                            "supported from asset \"{}\".",
                                             current));
                     }
 

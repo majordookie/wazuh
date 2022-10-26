@@ -17,7 +17,8 @@ Builder& Registry::getBuilder(const std::string& name)
         == Registry::instance().m_builders.end())
     {
         throw std::runtime_error(fmt::format(
-            "[getBuilder(name)] name not found in the registry: [{}]", name));
+            "Engine registry: Builder name \"{}\" could not be found in the registry.",
+            name));
     }
     return Registry::instance().m_builders.at(name);
 }

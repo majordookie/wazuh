@@ -22,15 +22,16 @@ base::Expression stageNormalizeBuilder(const std::any& definition)
     }
     catch (std::exception& e)
     {
-        throw std::runtime_error(
-            "[builders::stageNormalizeBuilder(json)] Received unexpected argument type");
+        throw std::runtime_error(fmt::format(
+            "Engine normalize stage builder: Definition could not be converted to json: {}",
+            e.what()));
     }
 
     if (!jsonDefinition.isArray())
     {
         throw std::runtime_error(
-            fmt::format("[builders::stageNormalizeBuilder(json)] Invalid json definition "
-                        "type: expected [array] but got [{}]",
+            fmt::format("Engine normalize stage builder: Invalid json definition type: "
+                        "expected \"array\" but got \"{}\".",
                         jsonDefinition.typeName()));
     }
 
@@ -45,32 +46,32 @@ base::Expression stageNormalizeBuilder(const std::any& definition)
             if (!block.isObject())
             {
                 throw std::runtime_error(
-                    fmt::format("[builders::stageNormalizeBuilder(json)] "
-                                "Invalid array item type: expected [object] but got "
-                                "[{}]",
+                    fmt::format("Engine normalize stage builder: Invalid array item "
+                                "type, expected \"object\" but got \"{}\"",
                                 block.typeName()));
             }
             auto blockObj = block.getObject().value();
             std::vector<base::Expression> subBlocksExpressions;
 
-            std::transform(blockObj.begin(),
-                           blockObj.end(),
-                           std::back_inserter(subBlocksExpressions),
-                           [](auto& tuple)
-                           {
-                               auto& [key, value] = tuple;
-                               try
-                               {
-                                   return Registry::getBuilder("stage." + key)(value);
-                               }
-                               catch (const std::exception& e)
-                               {
-                                   std::throw_with_nested(std::runtime_error(fmt::format(
-                                       "[builders::stageNormalizeBuilder(json)] "
-                                       "Exception building stage block [{}]",
-                                       key)));
-                               }
-                           });
+            std::transform(
+                blockObj.begin(),
+                blockObj.end(),
+                std::back_inserter(subBlocksExpressions),
+                [](auto& tuple)
+                {
+                    auto& [key, value] = tuple;
+                    try
+                    {
+                        return Registry::getBuilder("stage." + key)(value);
+                    }
+                    catch (const std::exception& e)
+                    {
+                        std::throw_with_nested(std::runtime_error(
+                            fmt::format("Engine normalize stage builder: Stage block "
+                                        "\"{}\" building failed: {}",
+                                        key, e.what())));
+                    }
+                });
             auto expression = base::And::create("subblock", subBlocksExpressions);
             return expression;
         });
