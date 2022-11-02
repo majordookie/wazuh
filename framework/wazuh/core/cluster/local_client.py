@@ -2,8 +2,9 @@
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 import asyncio
 import logging
-from typing import Tuple
 import os
+import time
+from typing import Tuple
 
 import uvloop
 
@@ -154,7 +155,7 @@ class LocalClient(client.AbstractClientManager):
         except Exception as e:
             raise exception.WazuhInternalError(3009, str(e))
 
-    async def send_api_request(self, command: bytes, data: bytes, wait_for_complete: bool) -> str:
+    async def send_api_request(self, command: bytes, data: bytes) -> str:
         """Send DAPI request to the server and wait for response.
 
         Parameters
@@ -163,8 +164,6 @@ class LocalClient(client.AbstractClientManager):
             Command to execute.
         data : bytes
             Data to send.
-        wait_for_complete : bool
-            Whether to raise a timeout exception or not.
 
         Returns
         -------
@@ -175,23 +174,40 @@ class LocalClient(client.AbstractClientManager):
         if result == 'There are no connected worker nodes':
             request_result = {}
         else:
-            # Wait for expected data if it is not returned by send_request(),
-            # which occurs when the following commands are used.
+            # Wait for expected data if it is not returned by send_request (only when the following commands are used).
             if command == b'dapi' or command == b'dapi_fwd' or command == b'send_file' or command == b'sendasync' \
                     or result == 'Sent request to master node':
-                try:
-                    timeout = None if wait_for_complete \
-                        else self.cluster_items['intervals']['communication']['timeout_dapi_request']
-                    await asyncio.wait_for(self.protocol.response_available.wait(), timeout=timeout)
-                    request_result = self.protocol.response.decode()
-                except asyncio.TimeoutError:
-                    raise exception.WazuhInternalError(3020)
+                start_time = time.perf_counter()
+                while True:
+                    elapsed_time = time.perf_counter() - start_time
+                    timeout = min(
+                        max(self.cluster_items['intervals']['communication']['timeout_dapi_request'] - elapsed_time, 0),
+                        self.cluster_items['intervals']['worker']['keep_alive']
+                    )
+                    try:
+                        await asyncio.wait_for(self.protocol.response_available.wait(), timeout=timeout)
+                        request_result = self.protocol.response.decode()
+                        break
+                    except asyncio.TimeoutError:
+                        if timeout < self.cluster_items['intervals']['worker']['keep_alive']:
+                            raise exception.WazuhInternalError(3020)
+                        else:
+                            try:
+                                # Keepalive is sent so local server does not close communication with this client.
+                                await self.protocol.send_request(b'echo-c', b'keepalive')
+                            except exception.WazuhClusterError as e:
+                                if e.code == 3018:
+                                    raise exception.WazuhInternalError(3020)
+                                else:
+                                    raise e
+
             # If no data is expected (only the send_request() result), immediately return the output of send_request.
             else:
                 request_result = result
+
         return request_result
 
-    async def execute(self, command: bytes, data: bytes, wait_for_complete: bool) -> str:
+    async def execute(self, command: bytes, data: bytes) -> str:
         """Execute a command in the local client.
 
         Manage the connection with the local_server by creating such connection. Then, after sending a request
@@ -203,8 +219,6 @@ class LocalClient(client.AbstractClientManager):
             Command to execute.
         data : bytes
             Data to send.
-        wait_for_complete : bool
-            Whether to raise a timeout exception or not.
 
         Returns
         -------
@@ -212,7 +226,7 @@ class LocalClient(client.AbstractClientManager):
             Request response.
         """
         await self.start()
-        result = await self.send_api_request(command, data, wait_for_complete)
+        result = await self.send_api_request(command, data)
         self.transport.close()
         await self.protocol.on_con_lost
         return result
@@ -233,4 +247,4 @@ class LocalClient(client.AbstractClientManager):
             Request response.
         """
         await self.start()
-        return await self.send_api_request(b'send_file', f"{path} {node_name}".encode(), False)
+        return await self.send_api_request(b'send_file', f"{path} {node_name}".encode())
